@@ -9,7 +9,7 @@ class CollectionAddDTO
 {
     #[Assert\NotBlank(message: 'Game ID is required')]
     #[Assert\Type('integer', message: 'Game ID must be an integer')]
-    private $game_id;
+    private $gameId;
 
     #[Assert\NotBlank(message: 'Platform is required')]
     #[Assert\Type('string', message: 'Platform must be a string')]
@@ -21,12 +21,12 @@ class CollectionAddDTO
 
     public function getGameId(): ?int
     {
-        return $this->game_id;
+        return $this->gameId;
     }
 
-    public function setGameId(?int $game_id): self
+    public function setGameId(?int $gameId): self
     {
-        $this->game_id = $game_id;
+        $this->gameId = $gameId;
         return $this;
     }
 
