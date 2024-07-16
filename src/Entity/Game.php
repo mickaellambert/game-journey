@@ -3,25 +3,41 @@
 namespace App\Entity;
 
 use App\Repository\GameRepository;
+use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 class Game
 {
+    public const STATUS_NOT_STARTED = 'not_started';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_WISHLIST = 'wishlist';
+    public const STATUS_ABANDONED = 'abandoned';
+    public const STATUSES = [
+        self::STATUS_NOT_STARTED,
+        self::STATUS_IN_PROGRESS,
+        self::STATUS_COMPLETED,
+        self::STATUS_WISHLIST,
+        self::STATUS_ABANDONED
+    ];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $title = null;
+    private ?string $name = null;
 
     #[ORM\Column(length: 255)]
     private ?string $platform = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $status = null;
+    private ?string $status = self::STATUS_NOT_STARTED;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $review = null;
@@ -29,23 +45,11 @@ class Game
     #[ORM\Column(nullable: true)]
     private ?int $rating = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $genre = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $mode = null;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $cover = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?int $metacriticScore = null;
-
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $pegi = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $developer = null;
@@ -56,25 +60,45 @@ class Game
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $releasedAt = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, options: ['default' => 'CURRENT_TIMESTAMP'])]
     private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $updatedAt = null;
+
+    /**
+     * @var Collection<int, Genre>
+     */
+    #[ORM\ManyToMany(targetEntity: genre::class, inversedBy: 'games')]
+    private Collection $genres;
+
+    /**
+     * @var Collection<int, Mode>
+     */
+    #[ORM\ManyToMany(targetEntity: Mode::class, inversedBy: 'games')]
+    private Collection $modes;
+
+    public function __construct()
+    {
+        $this->createdAt = new DateTime();
+        $this->updatedAt = new DateTime();
+        $this->genres = new ArrayCollection();
+        $this->modes = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getTitle(): ?string
+    public function getName(): ?string
     {
-        return $this->title;
+        return $this->name;
     }
 
-    public function setTitle(string $title): static
+    public function setName(string $name): static
     {
-        $this->title = $title;
+        $this->name = $name;
 
         return $this;
     }
@@ -127,30 +151,6 @@ class Game
         return $this;
     }
 
-    public function getGenre(): ?string
-    {
-        return $this->genre;
-    }
-
-    public function setGenre(?string $genre): static
-    {
-        $this->genre = $genre;
-
-        return $this;
-    }
-
-    public function getMode(): ?string
-    {
-        return $this->mode;
-    }
-
-    public function setMode(?string $mode): static
-    {
-        $this->mode = $mode;
-
-        return $this;
-    }
-
     public function getDescription(): ?string
     {
         return $this->description;
@@ -171,30 +171,6 @@ class Game
     public function setCover(?string $cover): static
     {
         $this->cover = $cover;
-
-        return $this;
-    }
-
-    public function getMetacriticScore(): ?int
-    {
-        return $this->metacriticScore;
-    }
-
-    public function setMetacriticScore(?int $metacriticScore): static
-    {
-        $this->metacriticScore = $metacriticScore;
-
-        return $this;
-    }
-
-    public function getPegi(): ?string
-    {
-        return $this->pegi;
-    }
-
-    public function setPegi(?string $pegi): static
-    {
-        $this->pegi = $pegi;
 
         return $this;
     }
@@ -243,7 +219,6 @@ class Game
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
-
         return $this;
     }
 
@@ -255,6 +230,53 @@ class Game
     public function setUpdatedAt(\DateTimeInterface $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, genre>
+     */
+    public function getGenres(): Collection
+    {
+        return $this->genres;
+    }
+
+    public function addGenre(genre $genre): static
+    {
+        if (!$this->genres->contains($genre)) {
+            $this->genres->add($genre);
+        }
+
+        return $this;
+    }
+
+    public function removeGenre(genre $genre): static
+    {
+        $this->genres->removeElement($genre);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Mode>
+     */
+    public function getModes(): Collection
+    {
+        return $this->modes;
+    }
+
+    public function addMode(Mode $mode): static
+    {
+        if (!$this->modes->contains($mode)) {
+            $this->modes->add($mode);
+        }
+
+        return $this;
+    }
+
+    public function removeMode(Mode $mode): static
+    {
+        $this->modes->removeElement($mode);
 
         return $this;
     }
