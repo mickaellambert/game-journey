@@ -81,7 +81,6 @@ class CollectionManagerTest extends TestCase
         $result = $this->collectionManager->addGame($data);
 
         $this->assertEquals(Response::HTTP_CREATED, $result['status']);
-        $this->assertEquals('Game added successfully', $result['data']['message']);
     }
 
     public function testAddGameInvalidData()
@@ -104,7 +103,7 @@ class CollectionManagerTest extends TestCase
         $result = $this->collectionManager->addGame($data);
 
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $result['status']);
-        $this->assertArrayHasKey('game_id', $result['data']);
+        $this->assertArrayHasKey('game_id', $result['errors']);
     }
 
     public function testAddGameAlreadyExists()
@@ -135,7 +134,7 @@ class CollectionManagerTest extends TestCase
         $result = $this->collectionManager->addGame($data);
 
         $this->assertEquals(Response::HTTP_CONFLICT, $result['status']);
-        $this->assertEquals('Game already exists in the collection', $result['data']['game']);
+        $this->assertEquals('Game already exists in the collection', $result['errors']['game']);
     }
 
     public function testAddGamePlatformNotAvailable()
@@ -166,7 +165,7 @@ class CollectionManagerTest extends TestCase
         $result = $this->collectionManager->addGame($data);
 
         $this->assertEquals(Response::HTTP_BAD_REQUEST, $result['status']);
-        $this->assertEquals('Game not available on specified platform', $result['data']['platform']);
+        $this->assertEquals('Game not available on specified platform', $result['errors']['platform']);
     }
 
     public function testAddGameNotFound()
@@ -183,7 +182,7 @@ class CollectionManagerTest extends TestCase
         $result = $this->collectionManager->addGame($data);
 
         $this->assertEquals(Response::HTTP_NOT_FOUND, $result['status']);
-        $this->assertEquals('Game not found', $result['data']['game']);
+        $this->assertEquals('Game not found', $result['errors']['game']);
     }
 
     public function testAddGameWithGenresAndModes()
@@ -219,6 +218,5 @@ class CollectionManagerTest extends TestCase
         $result = $this->collectionManager->addGame($data);
 
         $this->assertEquals(Response::HTTP_CREATED, $result['status']);
-        $this->assertEquals('Game added successfully', $result['data']['message']);
     }
 }

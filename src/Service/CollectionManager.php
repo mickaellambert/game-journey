@@ -35,7 +35,7 @@ class CollectionManager
         if (count($errors) > 0) {
             return [
                 'status' => Response::HTTP_BAD_REQUEST, 
-                'data' => $this->apiErrorHandler->handle($this->validator->validate($dto))
+                'errors' => $this->apiErrorHandler->handle($this->validator->validate($dto))
             ];
         }
 
@@ -44,7 +44,7 @@ class CollectionManager
         if (empty($gameData)) {
             return [
                 'status' => Response::HTTP_NOT_FOUND, 
-                'data' => [
+                'errors' => [
                     'game' => 'Game not found'
                 ]
             ];
@@ -53,7 +53,7 @@ class CollectionManager
         if (!in_array($dto->getPlatform(), array_column($gameData['platforms'], 'name'))) {
             return [
                 'status' => Response::HTTP_BAD_REQUEST, 
-                'data' => [
+                'errors' => [
                     'platform' => 'Game not available on specified platform'
                 ]
             ];
@@ -66,7 +66,8 @@ class CollectionManager
 
         if ($game) {
             return [
-                'status' => Response::HTTP_CONFLICT, 'data' => [
+                'status' => Response::HTTP_CONFLICT, 
+                'errors' => [
                     'game' => 'Game already exists in the collection'
                 ]
             ];
@@ -101,10 +102,7 @@ class CollectionManager
         $this->entityManager->flush();
 
         return [
-            'status' => Response::HTTP_CREATED, 
-            'data' => [
-                'message' => 'Game added successfully'
-            ]
+            'status' => Response::HTTP_CREATED
         ];
     }
 }

@@ -22,6 +22,6 @@ class CollectionController extends AbstractController
     {
         $result = $this->collectionManager->addGame(json_decode($request->getContent(), true));
 
-        return $this->json($result['data'], $result['status']);
+        return $this->json($result['data'] ?? [], $result['status']);
     }
 }
