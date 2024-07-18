@@ -2,7 +2,10 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Post;
 use App\Repository\GameRepository;
+use App\State\GameAddProcessor;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -10,6 +13,34 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
+#[ApiResource(
+    operations: [
+        new Post(
+            uriTemplate: '/games',
+            processor: GameAddProcessor::class,
+            openapiContext: [
+                'summary' => 'Add a new game to the collection',
+                'requestBody' => [
+                    'content' => [
+                        'application/json' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'game_id' => ['type' => 'integer'],
+                                    'platform' => ['type' => 'string'],
+                                    'status' => ['type' => 'string']
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            status: 201
+        )
+    ],
+    normalizationContext: ['groups' => ['read']],
+    denormalizationContext: ['groups' => ['write']]
+)]
 class Game
 {
     public const STATUS_NOT_STARTED = 'not_started';
