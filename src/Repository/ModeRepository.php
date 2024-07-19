@@ -17,13 +17,13 @@ class ModeRepository extends ServiceEntityRepository implements EntityFactoryInt
         parent::__construct($registry, Mode::class);
     }
 
-    public function findOrCreate(string $name): Mode
+    public function findOrCreate(array $data): Mode
     {
-        $mode = $this->findOneBy(['name' => $name]);
+        $mode = $this->findOneBy($data);
         
         if (!$mode) {
             $mode = new Mode();
-            $mode->setName($name);
+            $mode->setName($data['name']);
             $this->getEntityManager()->persist($mode);
         }
         

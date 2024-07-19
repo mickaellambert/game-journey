@@ -17,13 +17,13 @@ class GenreRepository extends ServiceEntityRepository implements EntityFactoryIn
         parent::__construct($registry, Genre::class);
     }
 
-    public function findOrCreate(string $name): Genre
+    public function findOrCreate(array $data): Genre
     {
-        $genre = $this->findOneBy(['name' => $name]);
+        $genre = $this->findOneBy($data);
         
         if (!$genre) {
             $genre = new Genre();
-            $genre->setName($name);
+            $genre->setName($data['name']);
             $this->getEntityManager()->persist($genre);
         }
         

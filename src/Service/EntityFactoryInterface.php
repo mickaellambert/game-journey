@@ -4,5 +4,5 @@ namespace App\Service;
 
 interface EntityFactoryInterface
 {
-    public function findOrCreate(string $value);
+    public function findOrCreate(array $data);
 }

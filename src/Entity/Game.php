@@ -3,58 +3,21 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Post;
+use App\Entity\Traits\Timestampable;
 use App\Repository\GameRepository;
-use App\State\GameAddProcessor;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
-#[ApiResource(
-    operations: [
-        new Post(
-            uriTemplate: '/games',
-            processor: GameAddProcessor::class,
-            openapiContext: [
-                'summary' => 'Add a new game to the collection',
-                'requestBody' => [
-                    'content' => [
-                        'application/json' => [
-                            'schema' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'game_id' => ['type' => 'integer'],
-                                    'platform' => ['type' => 'string'],
-                                    'status' => ['type' => 'string']
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ],
-            status: 201
-        )
-    ],
-    normalizationContext: ['groups' => ['read']],
-    denormalizationContext: ['groups' => ['write']]
-)]
+#[ORM\HasLifecycleCallbacks]
+#[ApiResource]
 class Game
 {
-    public const STATUS_NOT_STARTED = 'not_started';
-    public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_WISHLIST = 'wishlist';
-    public const STATUS_ABANDONED = 'abandoned';
-    public const STATUSES = [
-        self::STATUS_NOT_STARTED,
-        self::STATUS_IN_PROGRESS,
-        self::STATUS_COMPLETED,
-        self::STATUS_WISHLIST,
-        self::STATUS_ABANDONED
-    ];
+    public const MAX_LENGTH_DESCRIPTION = 65535;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -62,52 +25,60 @@ class Game
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $platform = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $status = self::STATUS_NOT_STARTED;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $review = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?int $rating = null;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: self::MAX_LENGTH_DESCRIPTION)]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $cover = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $developer = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     private ?string $publisher = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\NotBlank]
+    #[Assert\Date]
     private ?\DateTimeInterface $releasedAt = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, options: ['default' => 'CURRENT_TIMESTAMP'])]
-    private ?\DateTimeInterface $createdAt = null;
-
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $updatedAt = null;
+    /**
+     * @var Collection<int, Platform>
+     */
+    #[ORM\ManyToMany(targetEntity: Platform::class, inversedBy: 'games')]
+    #[Assert\Valid]
+    private Collection $platforms;
 
     /**
      * @var Collection<int, Genre>
      */
     #[ORM\ManyToMany(targetEntity: genre::class, inversedBy: 'games')]
+    #[Assert\Valid]
     private Collection $genres;
 
     /**
      * @var Collection<int, Mode>
      */
     #[ORM\ManyToMany(targetEntity: Mode::class, inversedBy: 'games')]
+    #[Assert\Valid]
     private Collection $modes;
+
+    /**
+     * @var Collection<int, UserGame>
+     */
+    #[ORM\OneToMany(targetEntity: UserGame::class, mappedBy: 'game', orphanRemoval: true)]
+    #[Assert\Valid]
+    private Collection $collectors;
+
+    use Timestampable;
 
     public function __construct()
     {
@@ -115,13 +86,15 @@ class Game
         $this->updatedAt = new DateTime();
         $this->genres = new ArrayCollection();
         $this->modes = new ArrayCollection();
+        $this->collectors = new ArrayCollection();
+        $this->platforms = new ArrayCollection();
     }
 
     public function getId(): ?int
     {
         return $this->id;
     }
-
+    
     public function getName(): ?string
     {
         return $this->name;
@@ -133,55 +106,7 @@ class Game
 
         return $this;
     }
-
-    public function getPlatform(): ?string
-    {
-        return $this->platform;
-    }
-
-    public function setPlatform(string $platform): static
-    {
-        $this->platform = $platform;
-
-        return $this;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(string $status): static
-    {
-        $this->status = $status;
-
-        return $this;
-    }
-
-    public function getReview(): ?string
-    {
-        return $this->review;
-    }
-
-    public function setReview(?string $review): static
-    {
-        $this->review = $review;
-
-        return $this;
-    }
-
-    public function getRating(): ?int
-    {
-        return $this->rating;
-    }
-
-    public function setRating(?int $rating): static
-    {
-        $this->rating = $rating;
-
-        return $this;
-    }
-
+    
     public function getDescription(): ?string
     {
         return $this->description;
@@ -265,6 +190,30 @@ class Game
     }
 
     /**
+     * @return Collection<int, Platform>
+     */
+    public function getPlatforms(): Collection
+    {
+        return $this->platforms;
+    }
+
+    public function addPlatform(Platform $platform): static
+    {
+        if (!$this->platforms->contains($platform)) {
+            $this->platforms->add($platform);
+        }
+
+        return $this;
+    }
+
+    public function removePlatform(Platform $platform): static
+    {
+        $this->platforms->removeElement($platform);
+
+        return $this;
+    }
+
+    /**
      * @return Collection<int, genre>
      */
     public function getGenres(): Collection
@@ -308,6 +257,36 @@ class Game
     public function removeMode(Mode $mode): static
     {
         $this->modes->removeElement($mode);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, UserGame>
+     */
+    public function getCollectors(): Collection
+    {
+        return $this->collectors;
+    }
+
+    public function addCollector(UserGame $collector): static
+    {
+        if (!$this->collectors->contains($collector)) {
+            $this->collectors->add($collector);
+            $collector->setGame($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCollector(UserGame $collector): static
+    {
+        if ($this->collectors->removeElement($collector)) {
+            // set the owning side to null (unless already changed)
+            if ($collector->getGame() === $this) {
+                $collector->setGame(null);
+            }
+        }
 
         return $this;
     }

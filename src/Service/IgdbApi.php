@@ -3,20 +3,17 @@
 namespace App\Service;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Psr\Log\LoggerInterface;
 
-class IgdbApiService
+class IgdbApi
 {
     private $client;
-    private $logger;
     private $clientId;
     private $clientSecret;
     private $accessToken;
 
-    public function __construct(HttpClientInterface $client, LoggerInterface $logger, string $clientId, string $clientSecret)
+    public function __construct(HttpClientInterface $client, string $clientId, string $clientSecret)
     {
         $this->client = $client;
-        $this->logger = $logger;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->accessToken = $this->getAccessToken();
