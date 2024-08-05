@@ -52,6 +52,7 @@ class GameManager implements EntityFactoryInterface
 
         $game->setDeveloper($data['developer'] ?? null);
         $game->setPublisher($data['publisher'] ?? null);
+        $game->setIgdbId($data['game_id'] ?? null);
 
         $this->entityManager->persist($game);
         $this->entityManager->flush();
