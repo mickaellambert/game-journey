@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class IgdbApi
@@ -48,5 +49,30 @@ class IgdbApi
 
         $data = $response->toArray();
         return $data[0] ?? [];
+    }
+
+    public function selectAllByDump(string $endpoint): string
+    {
+        $url = 'https://api.igdb.com/v4/dumps/' . $endpoint;
+
+        $response = $this->client->request('GET', $url, [
+            'headers' => [
+                'Client-ID' => $this->clientId,
+                'Authorization' => 'Bearer ' . $this->accessToken,
+                'Accept' => 'application/json',
+            ],
+        ]);
+
+        $data = $response->toArray();
+
+        // Download the dump file
+        $fileResponse = $this->client->request('GET', $data['s3_url']);
+        $fileContent = $fileResponse->getContent();
+
+        // Save the dump file locally
+        $filePath = getenv('IGDB_DUMP_PATH') . $data['file_name'];
+        file_put_contents($filePath, $fileContent);
+
+        return $filePath;
     }
 }

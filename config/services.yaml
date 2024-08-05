@@ -26,3 +26,7 @@ services:
         arguments:
             $clientId: '%env(IGDB_CLIENT_ID)%'
             $clientSecret: '%env(IGDB_CLIENT_SECRET)%'
+    App\Command\ImportIgdbDumpsCommand:
+        arguments:
+            $igdbDumpPath: '%env(IGDB_DUMP_PATH)%'
+        tags: ['console.command']
