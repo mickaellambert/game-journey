@@ -23,8 +23,11 @@ class GenreRepository extends ServiceEntityRepository implements EntityFactoryIn
         
         if (!$genre) {
             $genre = new Genre();
+            $genre->setIgdbId($data['igdbId']);
             $genre->setName($data['name']);
+
             $this->getEntityManager()->persist($genre);
+            $this->getEntityManager()->flush();
         }
         
         return $genre;

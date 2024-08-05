@@ -23,8 +23,11 @@ class PlatformRepository extends ServiceEntityRepository implements EntityFactor
         
         if (!$platform) {
             $platform = new Platform();
+            $platform->setIgdbId($data['igdbId']);
             $platform->setName($data['name']);
+
             $this->getEntityManager()->persist($platform);
+            $this->getEntityManager()->flush();
         }
         
         return $platform;

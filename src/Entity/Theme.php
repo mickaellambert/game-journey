@@ -2,13 +2,13 @@
 
 namespace App\Entity;
 
-use App\Repository\ModeRepository;
+use App\Repository\ThemeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: ModeRepository::class)]
-class Mode
+#[ORM\Entity(repositoryClass: ThemeRepository::class)]
+class Theme
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -61,7 +61,7 @@ class Mode
     {
         if (!$this->games->contains($game)) {
             $this->games->add($game);
-            $game->addMode($this);
+            $game->addTheme($this);
         }
 
         return $this;
@@ -70,7 +70,7 @@ class Mode
     public function removeGame(Game $game): static
     {
         if ($this->games->removeElement($game)) {
-            $game->removeMode($this);
+            $game->removeTheme($this);
         }
 
         return $this;

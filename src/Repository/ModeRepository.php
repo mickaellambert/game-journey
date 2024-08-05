@@ -23,8 +23,11 @@ class ModeRepository extends ServiceEntityRepository implements EntityFactoryInt
         
         if (!$mode) {
             $mode = new Mode();
+            $mode->setIgdbId($data['igdbId']);
             $mode->setName($data['name']);
+
             $this->getEntityManager()->persist($mode);
+            $this->getEntityManager()->flush();
         }
         
         return $mode;

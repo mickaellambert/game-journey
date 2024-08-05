@@ -45,8 +45,7 @@ class Game
     #[Assert\Length(max: 255)]
     private ?string $publisher = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Assert\NotBlank]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     #[Assert\Date]
     private ?\DateTimeInterface $releasedAt = null;
 
@@ -72,11 +71,21 @@ class Game
     private Collection $modes;
 
     /**
+     * @var Collection<int, Theme>
+     */
+    #[ORM\ManyToMany(targetEntity: Theme::class, inversedBy: 'games')]
+    #[Assert\Valid]
+    private Collection $themes;
+
+    /**
      * @var Collection<int, UserGame>
      */
     #[ORM\OneToMany(targetEntity: UserGame::class, mappedBy: 'game', orphanRemoval: true)]
     #[Assert\Valid]
     private Collection $collectors;
+
+    #[ORM\Column]
+    private ?int $igdbId = null;
 
     use Timestampable;
 
@@ -86,6 +95,7 @@ class Game
         $this->updatedAt = new DateTime();
         $this->genres = new ArrayCollection();
         $this->modes = new ArrayCollection();
+        $this->themes = new ArrayCollection();
         $this->collectors = new ArrayCollection();
         $this->platforms = new ArrayCollection();
     }
@@ -160,7 +170,7 @@ class Game
         return $this->releasedAt;
     }
 
-    public function setReleasedAt(\DateTimeInterface $releasedAt): static
+    public function setReleasedAt(?\DateTimeInterface $releasedAt): static
     {
         $this->releasedAt = $releasedAt;
 
@@ -261,6 +271,30 @@ class Game
         return $this;
     }
 
+        /**
+     * @return Collection<int, Theme>
+     */
+    public function getThemes(): Collection
+    {
+        return $this->themes;
+    }
+
+    public function addTheme(Theme $theme): static
+    {
+        if (!$this->themes->contains($theme)) {
+            $this->themes->add($theme);
+        }
+
+        return $this;
+    }
+
+    public function removeTheme(Theme $theme): static
+    {
+        $this->themes->removeElement($theme);
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, UserGame>
      */
@@ -287,6 +321,18 @@ class Game
                 $collector->setGame(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getIgdbId(): ?int
+    {
+        return $this->igdbId;
+    }
+
+    public function setIgdbId(int $igdbId): static
+    {
+        $this->igdbId = $igdbId;
 
         return $this;
     }
