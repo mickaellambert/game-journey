@@ -2,14 +2,7 @@
 
 namespace App\Command;
 
-use App\Entity\Company;
 use App\Entity\Game;
-use App\Entity\Mode;
-use App\Entity\Genre;
-use App\Entity\Platform;
-use App\Entity\Theme;
-use App\Repository\CompanyRepository;
-use App\Repository\GameRepository;
 use App\Repository\GenreRepository;
 use App\Repository\ModeRepository;
 use App\Repository\PlatformRepository;
@@ -27,7 +20,6 @@ class ImportIgdbDumpsCommand extends Command
     protected static $defaultName = 'app:import-igdb-dumps';
 
     private EntityManagerInterface $entityManager;
-    private GameRepository $gameRepository;
     private GenreRepository $genreRepository;
     private ModeRepository $modeRepository;
     private PlatformRepository $platformRepository;
@@ -36,7 +28,6 @@ class ImportIgdbDumpsCommand extends Command
 
     public function __construct(
         EntityManagerInterface $entityManager,
-        GameRepository $gameRepository,
         GenreRepository $genreRepository,
         ModeRepository $modeRepository,
         PlatformRepository $platformRepository,
@@ -45,7 +36,6 @@ class ImportIgdbDumpsCommand extends Command
     ) {
         parent::__construct();
         $this->entityManager = $entityManager;
-        $this->gameRepository = $gameRepository;
         $this->genreRepository = $genreRepository;
         $this->modeRepository = $modeRepository;
         $this->platformRepository = $platformRepository;
