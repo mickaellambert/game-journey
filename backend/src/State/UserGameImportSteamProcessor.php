@@ -1,7 +1,5 @@
 <?php
 
-// src/State/UserGameSteamImportProcessor.php
-
 namespace App\State;
 
 use App\Entity\Client;
@@ -24,7 +22,6 @@ use App\Exception\NotFoundException;
 use App\Repository\UserGameRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 
@@ -92,9 +89,7 @@ class UserGameImportSteamProcessor implements ProcessorInterface
             if (!$game) {
                 $missingGames[] = $steamGame;
                 continue;
-                // TODO : Log something
             }
-
 
             $userGame = $this->userGameRepository->findOneBy([
                 'user' => $user,
