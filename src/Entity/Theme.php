@@ -2,20 +2,25 @@
 
 namespace App\Entity;
 
-use App\Repository\ThemeRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\ThemeRepository;
+use ApiPlatform\Metadata\ApiResource;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ThemeRepository::class)]
+#[ApiResource]
 class Theme
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['usergame:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['usergame:read'])]
     private ?string $name = null;
 
     /**
@@ -25,6 +30,7 @@ class Theme
     private Collection $games;
 
     #[ORM\Column]
+    #[Groups(['usergame:read'])]
     private ?int $igdbId = null;
 
     public function __construct()

@@ -2,19 +2,20 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use App\Entity\Traits\Timestampable;
-use App\Repository\GameRepository;
 use DateTime;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\GameRepository;
+use App\Entity\Traits\Timestampable;
+use ApiPlatform\Metadata\ApiResource;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-#[ApiResource]
+#[ApiResource()]
 class Game
 {
     public const MAX_LENGTH_DESCRIPTION = 65535;
@@ -22,31 +23,38 @@ class Game
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['usergame:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 255)]
+    #[Groups(['usergame:read'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: self::MAX_LENGTH_DESCRIPTION)]
+    #[Groups(['usergame:read'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
+    #[Groups(['usergame:read'])]
     private ?string $cover = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
+    #[Groups(['usergame:read'])]
     private ?string $developer = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
+    #[Groups(['usergame:read'])]
     private ?string $publisher = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     #[Assert\Date]
+    #[Groups(['usergame:read'])]
     private ?\DateTimeInterface $releasedAt = null;
 
     /**
@@ -54,6 +62,7 @@ class Game
      */
     #[ORM\ManyToMany(targetEntity: Platform::class, inversedBy: 'games')]
     #[Assert\Valid]
+    #[Groups(['usergame:read'])]
     private Collection $platforms;
 
     /**
@@ -61,6 +70,7 @@ class Game
      */
     #[ORM\ManyToMany(targetEntity: genre::class, inversedBy: 'games')]
     #[Assert\Valid]
+    #[Groups(['usergame:read'])]
     private Collection $genres;
 
     /**
@@ -68,6 +78,7 @@ class Game
      */
     #[ORM\ManyToMany(targetEntity: Mode::class, inversedBy: 'games')]
     #[Assert\Valid]
+    #[Groups(['usergame:read'])]
     private Collection $modes;
 
     /**
@@ -75,6 +86,7 @@ class Game
      */
     #[ORM\ManyToMany(targetEntity: Theme::class, inversedBy: 'games')]
     #[Assert\Valid]
+    #[Groups(['usergame:read'])]
     private Collection $themes;
 
     /**
@@ -85,7 +97,14 @@ class Game
     private Collection $collectors;
 
     #[ORM\Column]
+    #[Groups(['usergame:read'])]
     private ?int $igdbId = null;
+
+    /**
+     * @var Collection<int, GameClient>
+     */
+    #[ORM\OneToMany(targetEntity: GameClient::class, mappedBy: 'game')]
+    private Collection $clients;
 
     use Timestampable;
 
@@ -98,6 +117,7 @@ class Game
         $this->themes = new ArrayCollection();
         $this->collectors = new ArrayCollection();
         $this->platforms = new ArrayCollection();
+        $this->clients = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -333,6 +353,36 @@ class Game
     public function setIgdbId(int $igdbId): static
     {
         $this->igdbId = $igdbId;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, GameClient>
+     */
+    public function getClients(): Collection
+    {
+        return $this->clients;
+    }
+
+    public function addClient(GameClient $client): static
+    {
+        if (!$this->clients->contains($client)) {
+            $this->clients->add($client);
+            $client->setGame($this);
+        }
+
+        return $this;
+    }
+
+    public function removeClient(GameClient $client): static
+    {
+        if ($this->clients->removeElement($client)) {
+            // set the owning side to null (unless already changed)
+            if ($client->getGame() === $this) {
+                $client->setGame(null);
+            }
+        }
 
         return $this;
     }

@@ -2,20 +2,25 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ModeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ModeRepository::class)]
+#[ApiResource]
 class Mode
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['usergame:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['usergame:read'])]
     private ?string $name = null;
 
     /**
@@ -25,6 +30,7 @@ class Mode
     private Collection $games;
 
     #[ORM\Column]
+    #[Groups(['usergame:read'])]
     private ?int $igdbId = null;
 
     public function __construct()
