@@ -8,6 +8,10 @@ use App\Repository\UserGameRepository;
 use App\State\UserGameAddProcessor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\State\UserGameAddProcessor;
+use ApiPlatform\Metadata\ApiResource;
+use App\Repository\UserGameRepository;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserGameRepository::class)]
@@ -16,52 +20,111 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             uriTemplate: '/collection',
             processor: UserGameAddProcessor::class,
+            inputFormats: ['json' => ['application/json']],
+            outputFormats: ['json' => ['application/json']],
             openapiContext: [
-                'summary' => 'Add a new game to the collection',
-                'description' => 'This endpoint allows you to add a new game to your personal collection. It checks if the game exists in the database, if not, it creates a new one.',
+                'summary' => 'Add a game to the user\'s collection',
+                'description' => 'Allows a user to add a specific game to their personal collection.',
                 'requestBody' => [
+                    'required' => true,
                     'content' => [
                         'application/json' => [
                             'schema' => [
                                 'type' => 'object',
                                 'properties' => [
-                                    'user_id' => ['type' => 'integer', 'description' => 'ID of the user adding the game.'],
-                                    'game_id' => ['type' => 'integer', 'description' => 'ID of the game. If provided, it must be the last data to provide.'],
+                                    'user_id' => [
+                                        'type' => 'integer',
+                                        'description' => 'The ID of the user adding the game.'
+                                    ],
+                                    'game_id' => [
+                                        'type' => 'integer',
+                                        'description' => 'The ID of the game to be added.'
+                                    ],
                                     'status' => [
                                         'type' => 'string',
-                                        'description' => 'Status of the game in the collection.',
+                                        'description' => 'The status of the game in the user\'s collection.',
                                         'enum' => UserGame::STATUSES
                                     ],
-                                    'platform' => ['type' => 'string', 'description' => 'Platform for the user\'s game.'],
-                                    'name' => ['type' => 'string', 'description' => 'Name of the game. Required if game_id is not provided.'],
-                                    'description' => ['type' => 'string', 'description' => 'Description of the game. Required if game_id is not provided.'],
-                                    'cover' => ['type' => 'string', 'description' => 'Cover image URL. Required if game_id is not provided.'],
-                                    'released_at' => ['type' => 'string', 'format' => 'date-time', 'description' => 'Release date of the game. Required if game_id is not provided.'],
-                                    'genres' => [
-                                        'type' => 'array',
-                                        'items' => ['type' => 'string'],
-                                        'description' => 'Genres of the game. Required if game_id is not provided.'
+                                    'platform_id' => [
+                                        'type' => 'integer',
+                                        'description' => 'The ID of the platform on which the game is played.'
                                     ],
-                                    'modes' => [
-                                        'type' => 'array',
-                                        'items' => ['type' => 'string'],
-                                        'description' => 'Game modes available. Required if game_id is not provided.'
+                                    'review' => [
+                                        'type' => 'string',
+                                        'description' => 'Optional review of the game by the user.',
+                                        'maxLength' => UserGame::MAX_LENGTH_REVIEW
                                     ],
-                                    'platforms' => [
-                                        'type' => 'array',
-                                        'items' => ['type' => 'string'],
-                                        'description' => 'Platforms the game is available on. Required if game_id is not provided.'
+                                    'rating' => [
+                                        'type' => 'integer',
+                                        'description' => 'Optional rating of the game by the user (0 to 5).',
+                                        'minimum' => 0,
+                                        'maximum' => 5
                                     ],
-                                    'developer' => ['type' => 'string', 'description' => 'Developer of the game. Required if game_id is not provided.'],
-                                    'publisher' => ['type' => 'string', 'description' => 'Publisher of the game. Required if game_id is not provided.']
                                 ],
-                                'required' => ['user_id', 'status', 'platform'],
-                                'dependencies' => [
-                                    'game_id' => [
-                                        'not' => [
-                                            'required' => [
-                                                'name', 'description', 'cover', 'released_at', 'genres', 'modes', 'platforms', 'developer', 'publisher'
-                                            ]
+                                'required' => ['user_id', 'game_id', 'status', 'platform_id']
+                            ]
+                        ]
+                    ]
+                ],
+                'responses' => [
+                    '201' => [
+                        'description' => 'Game successfully added to the collection',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    '$ref' => '#/components/schemas/UserGame'
+                                ]
+                            ]
+                        ]
+                    ],
+                    '400' => [
+                        'description' => 'Invalid input data',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'status' => ['type' => 'string'],
+                                        'code' => ['type' => 'integer'],
+                                        'errors' => [
+                                            'type' => 'object',
+                                            'additionalProperties' => ['type' => 'string']
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    '404' => [
+                        'description' => 'User or Platform not found',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'status' => ['type' => 'string'],
+                                        'code' => ['type' => 'integer'],
+                                        'errors' => [
+                                            'type' => 'object',
+                                            'additionalProperties' => ['type' => 'string']
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    '409' => [
+                        'description' => 'Game already exists in the user\'s collection',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'status' => ['type' => 'string'],
+                                        'code' => ['type' => 'integer'],
+                                        'errors' => [
+                                            'type' => 'object',
+                                            'additionalProperties' => ['type' => 'string']
                                         ]
                                     ]
                                 ]
@@ -84,8 +147,8 @@ use Symfony\Component\Validator\Constraints as Assert;
             status: 201
         )
     ],
-    normalizationContext: ['groups' => ['read']],
-    denormalizationContext: ['groups' => ['write']]
+    normalizationContext: ['groups' => ['usergame:read']],
+    denormalizationContext: ['groups' => ['usergame:write']]
 )]
 class UserGame
 {
@@ -107,31 +170,38 @@ class UserGame
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['usergame:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'collection')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['usergame:read', 'usergame:write'])]
     private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'collectors')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['usergame:read', 'usergame:write'])]
     private ?Game $game = null;
 
     #[ORM\ManyToOne(targetEntity: Platform::class)]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['usergame:read', 'usergame:write'])]
     private Platform $platform;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Choice(choices: UserGame::STATUSES)]
+    #[Groups(['usergame:read', 'usergame:write'])]
     private ?string $status = self::STATUS_NOT_STARTED;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: self::MAX_LENGTH_REVIEW)]
+    #[Groups(['usergame:read', 'usergame:write'])]
     private ?string $review = null;
 
     #[ORM\Column(nullable: true)]
     #[Assert\Range(min: 0, max: 5)]
+    #[Groups(['usergame:read', 'usergame:write'])]
     private ?int $rating = null;
 
     public function getId(): ?int
