@@ -22,11 +22,10 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
-    App\Service\IgdbApi:
+    App\Service\Api\IgdbApi:
         arguments:
             $clientId: '%env(IGDB_CLIENT_ID)%'
             $clientSecret: '%env(IGDB_CLIENT_SECRET)%'
-    App\Command\ImportIgdbDumpsCommand:
+    App\Service\Api\SteamApi:
         arguments:
-            $igdbDumpPath: '%env(IGDB_DUMP_PATH)%'
-        tags: ['console.command']
+            $clientId: '%env(STEAM_CLIENT_ID)%'
