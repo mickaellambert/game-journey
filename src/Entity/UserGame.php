@@ -2,15 +2,13 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
-use App\Repository\UserGameRepository;
-use App\State\UserGameAddProcessor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\State\UserGameAddProcessor;
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\UserGameRepository;
+use App\State\UserGameImportSteamProcessor;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -131,20 +129,100 @@ use Symfony\Component\Validator\Constraints as Assert;
                             ]
                         ]
                     ]
+                ]
+            ]
+        ),
+        new Post(
+            uriTemplate: '/collection/import-steam',
+            processor: UserGameImportSteamProcessor::class,
+            inputFormats: ['json' => ['application/json']],
+            outputFormats: ['json' => ['application/json']],
+            openapiContext: [
+                'summary' => 'Import Steam games into the user\'s collection',
+                'description' => 'Allows a user to import their Steam library into their personal collection.',
+                'requestBody' => [
+                    'required' => true,
+                    'content' => [
+                        'application/json' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'user_id' => [
+                                        'type' => 'integer',
+                                        'description' => 'The ID of the user performing the import.'
+                                    ],
+                                    'steam_id' => [
+                                        'type' => 'string',
+                                        'description' => 'The Steam ID of the user.'
+                                    ]
+                                ],
+                                'required' => ['user_id', 'steam_id']
+                            ]
+                        ]
+                    ]
                 ],
                 'responses' => [
                     '201' => [
-                        'description' => 'Game successfully added to the collection'
+                        'description' => 'Games successfully imported',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'status' => ['type' => 'string'],
+                                        'code' => ['type' => 'integer'],
+                                        'nbGamesAdded' => [
+                                            'type' => 'integer',
+                                            'description' => 'Number of games that have been imported.',
+                                        ],
+                                        'missingGames' => [
+                                            'type' => 'array',
+                                            'description' => 'List of games that could not be imported due to missing data.',
+                                            'items' => [
+                                                'type' => 'object',
+                                                'properties' => [
+                                                    'appid' => ['type' => 'integer'],
+                                                    'name' => ['type' => 'string']
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
                     ],
                     '400' => [
-                        'description' => 'Invalid input data'
+                        'description' => 'Invalid input data',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'status' => ['type' => 'string'],
+                                        'code' => ['type' => 'integer'],
+                                        'message' => ['type' => 'string']
+                                    ]
+                                ]
+                            ]
+                        ]
                     ],
                     '404' => [
-                        'description' => 'User not found'
+                        'description' => 'User not found or no games found for the provided Steam ID',
+                        'content' => [
+                            'application/json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'status' => ['type' => 'string'],
+                                        'code' => ['type' => 'integer'],
+                                        'message' => ['type' => 'string']
+                                    ]
+                                ]
+                            ]
+                        ]
                     ]
                 ]
-            ],
-            status: 201
+            ]
         )
     ],
     normalizationContext: ['groups' => ['usergame:read']],

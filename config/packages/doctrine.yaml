@@ -24,6 +24,10 @@ doctrine:
                 alias: App
         controller_resolver:
             auto_mapping: false
+        dql:
+            string_functions:
+                LEVENSHTEIN: App\Doctrine\Functions\Levenshtein
+                SOUNDEX: App\Doctrine\Functions\Soundex
 
 when@test:
     doctrine:
