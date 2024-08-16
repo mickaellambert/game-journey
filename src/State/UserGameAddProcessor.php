@@ -2,15 +2,16 @@
 
 namespace App\State;
 
-use ApiPlatform\Metadata\Operation;
-use ApiPlatform\State\ProcessorInterface;
 use App\DTO\UserGameDTO;
+use App\Entity\UserGame;
+use ApiPlatform\Metadata\Operation;
 use App\Service\Manager\UserGameManager;
+use ApiPlatform\State\ProcessorInterface;
+use Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class UserGameAddProcessor implements ProcessorInterface
 {
@@ -23,7 +24,7 @@ class UserGameAddProcessor implements ProcessorInterface
         $this->serializer = $serializer;
     }
 
-    public function process($data, Operation $operation, array $uriVariables = [], array $context = []): void
+    public function process($data, Operation $operation, array $uriVariables = [], array $context = []): UserGame
     {
         $request = $context['request'] ?? null;
 
@@ -31,15 +32,13 @@ class UserGameAddProcessor implements ProcessorInterface
             throw new HttpException(Response::HTTP_BAD_REQUEST, 'Invalid request.');
         }
 
-        $result = $this->userGameManager->add($this->serializer->deserialize($request->getContent(), UserGameDTO::class, 'json'));
-
-        if ($result['status'] === 'error') {
-            $response = new JsonResponse(['status' => $result['status'], 'code' => $result['code'], 'errors' => $result['errors']], $result['code']);
-        } else {
-            $response = new JsonResponse(['status' => $result['status'], 'code' => $result['code']], $result['code']);
+        try {
+            $userGame = $this->userGameManager->add($this->serializer->deserialize($request->getContent(), UserGameDTO::class, 'json'));
+        }
+        catch (Exception $e) {
+            throw new HttpException($e->getCode(), $e->getMessage());
         }
 
-        $response->send();
-        exit;
+        return $userGame;
     }
 }

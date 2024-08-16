@@ -2,13 +2,9 @@
 
 namespace App\Command;
 
-use App\Entity\Company;
 use App\Entity\Game;
-use App\Entity\Mode;
-use App\Entity\Genre;
-use App\Entity\Platform;
-use App\Entity\Theme;
-use App\Repository\CompanyRepository;
+use App\Entity\GameClient;
+use App\Repository\ClientRepository;
 use App\Repository\GameRepository;
 use App\Repository\GenreRepository;
 use App\Repository\ModeRepository;
@@ -32,7 +28,7 @@ class ImportIgdbDumpsCommand extends Command
     private ModeRepository $modeRepository;
     private PlatformRepository $platformRepository;
     private ThemeRepository $themeRepository;
-    private string $igdbDumpPath;
+    private ClientRepository $clientRepository;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -41,7 +37,7 @@ class ImportIgdbDumpsCommand extends Command
         ModeRepository $modeRepository,
         PlatformRepository $platformRepository,
         ThemeRepository $themeRepository,
-        string $igdbDumpPath
+        ClientRepository $clientRepository,
     ) {
         parent::__construct();
         $this->entityManager = $entityManager;
@@ -50,7 +46,7 @@ class ImportIgdbDumpsCommand extends Command
         $this->modeRepository = $modeRepository;
         $this->platformRepository = $platformRepository;
         $this->themeRepository = $themeRepository;
-        $this->igdbDumpPath = $igdbDumpPath;
+        $this->clientRepository = $clientRepository;
     }
 
     protected function configure()
@@ -81,12 +77,15 @@ class ImportIgdbDumpsCommand extends Command
         $this->importGames();
         $io->success('Games imported successfully.');
 
+        $this->importGamesClient($io); 
+        $io->success('Games references imported successfully.');
+
         return Command::SUCCESS;
     }
 
     private function importModes()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_game_modes.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_game_modes.csv', 'r');
         $csv->setHeaderOffset(0);
 
         foreach ($csv->getRecords() as $record) {
@@ -99,7 +98,7 @@ class ImportIgdbDumpsCommand extends Command
 
     private function importGenres()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_genres.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_genres.csv', 'r');
         $csv->setHeaderOffset(0);
 
         foreach ($csv->getRecords() as $record) {
@@ -112,7 +111,7 @@ class ImportIgdbDumpsCommand extends Command
 
     private function importPlatforms()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_platforms.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_platforms.csv', 'r');
         $csv->setHeaderOffset(0);
 
         foreach ($csv->getRecords() as $record) {
@@ -125,7 +124,7 @@ class ImportIgdbDumpsCommand extends Command
 
     private function importThemes()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_themes.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_themes.csv', 'r');
         $csv->setHeaderOffset(0);
 
         foreach ($csv->getRecords() as $record) {
@@ -138,7 +137,7 @@ class ImportIgdbDumpsCommand extends Command
 
     private function importGames()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_games.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_games.csv', 'r');
         $csv->setHeaderOffset(0);
 
         $covers = $this->importCovers();
@@ -204,9 +203,65 @@ class ImportIgdbDumpsCommand extends Command
         $this->entityManager->flush();
     }
 
+    private function importGamesClient($io) 
+    {
+        $csv = Reader::createFromPath('dumps/1723183200_external_games.csv', 'r');
+        $csv->setHeaderOffset(0);
+
+        $categories = [
+            1 => 'steam',
+            3 => 'giantbomb',
+            5 => 'gog',
+            10 => 'youtube',
+            11 => 'microsoft',
+            13 => 'apple',
+            14 => 'twitch',
+            15 => 'android',
+            20 => 'amazon_asin',
+            22 => 'amazon_luna',
+            23 => 'amazon_adg',
+            26 => 'epic_game_store',
+            28 => 'oculus',
+            29 => 'utomik',
+            30 => 'itch_io',
+            31 => 'xbox_marketplace',
+            32 => 'kartridge',
+            36 => 'playstation_store_us',
+            37 => 'focus_entertainment',
+            54 => 'xbox_game_pass_ultimate_cloud',
+            55 => 'gamejolt',
+        ];
+
+        $i = 1;
+
+        foreach ($csv->getRecords() as $record) {
+            $gameClient = new GameClient();
+
+            $client = $this->clientRepository->findOneByName($categories[$record['category']]);
+            $game = $this->gameRepository->findOneByIgdbId($record['game']);
+
+            if ($game && $client) {
+                $gameClient->setClient($client);
+                $gameClient->setGame($game);
+                $gameClient->setReference($record['uid']);
+    
+                $this->entityManager->persist($gameClient);
+    
+                $io->success($i . ' - Added game client for game ' . $game->getId() . ' and client ' . $client->getName());
+            }
+            else {
+                $io->error($i . ' - No game or client found for game ' . $record['game'] . ' and client ' . $record['category']);
+            }
+
+            $i++;
+        }
+        
+        $this->entityManager->flush();
+    }
+
     private function importCovers()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_covers.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_covers.csv', 'r');
         $csv->setHeaderOffset(0);
 
         $covers = [];
@@ -220,7 +275,7 @@ class ImportIgdbDumpsCommand extends Command
 
     private function importCompanies()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_companies.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_companies.csv', 'r');
         $csv->setHeaderOffset(0);
         $companies = [];
 
@@ -233,7 +288,7 @@ class ImportIgdbDumpsCommand extends Command
 
     private function importInvolvedCompanies()
     {
-        $csv = Reader::createFromPath($this->igdbDumpPath . '1722664800_involved_companies.csv', 'r');
+        $csv = Reader::createFromPath('dumps/1722664800_involved_companies.csv', 'r');
         $csv->setHeaderOffset(0);
 
         $involvedCompanies = [];

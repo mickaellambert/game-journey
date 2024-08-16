@@ -1,16 +1,15 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\Api;
 
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class IgdbApi
 {
-    private $client;
-    private $clientId;
-    private $clientSecret;
-    private $accessToken;
+    private HttpClientInterface $client;
+    private string $clientId;
+    private string $clientSecret;
+    private string $accessToken;
 
     public function __construct(HttpClientInterface $client, string $clientId, string $clientSecret)
     {
@@ -34,7 +33,7 @@ class IgdbApi
         return $data['access_token'];
     }
 
-    public function selectGameById(int $id): ?array 
+    public function findGameById(int $id): ?array 
     {
         $url = 'https://api.igdb.com/v4/games';
 
@@ -51,7 +50,7 @@ class IgdbApi
         return $data[0] ?? [];
     }
 
-    public function selectAllByDump(string $endpoint): string
+    public function findAllByDump(string $endpoint): string
     {
         $url = 'https://api.igdb.com/v4/dumps/' . $endpoint;
 
@@ -70,7 +69,7 @@ class IgdbApi
         $fileContent = $fileResponse->getContent();
 
         // Save the dump file locally
-        $filePath = getenv('IGDB_DUMP_PATH') . $data['file_name'];
+        $filePath = 'dumps/' . $data['file_name'];
         file_put_contents($filePath, $fileContent);
 
         return $filePath;
